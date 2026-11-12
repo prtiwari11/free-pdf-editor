@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Editor</title>
+  <meta name="description" content="View, comment, edit, fill, sign and organize PDFs in your browser. Files never leave your device.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M10 7h8l5 5v13H10z' fill='white'/%3E%3Cpath d='M18 7v5h5' fill='%23bfdbfe'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- App bar -->
+  <header class="appbar">
+    <div class="appbar-left">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#2563eb"/><path d="M10 7h8l5 5v13H10z" fill="#fff"/><path d="M18 7v5h5" fill="#bfdbfe"/></svg></div>
+      <div class="menu" id="fileMenu">
+        <button class="menu-btn" id="btnFileMenu" aria-haspopup="menu" aria-expanded="false">File</button>
+        <div class="menu-pop" role="menu" hidden>
+          <button role="menuitem" id="btnOpen" data-icon="open">Open… <kbd>Ctrl/Cmd+O</kbd></button>
+          <button role="menuitem" id="btnAdd" data-icon="add" data-needs-doc>Combine with another PDF…</button>
+          <button role="menuitem" id="btnSaveMenu" data-icon="download" data-needs-doc>Download edited PDF <kbd>Ctrl/Cmd+S</kbd></button>
+          <button role="menuitem" id="btnPrint" data-icon="print" data-needs-doc>Print… <kbd>Ctrl/Cmd+P</kbd></button>
+          <hr>
+          <button role="menuitem" id="btnProps" data-icon="info" data-needs-doc>Document properties…</button>
+          <button role="menuitem" id="btnShortcuts" data-icon="keyboard">Keyboard shortcuts</button>
+          <button role="menuitem" id="btnCloseDoc" data-icon="close" data-needs-doc>Close document</button>
+        </div>
+      </div>
+      <div class="doc-tab" id="docTab" hidden><span class="doc-dot" id="docDot" hidden></span><span id="docName"></span></div>
+    </div>
+    <div class="appbar-right">
+      <button class="icon-btn" id="btnUndo" data-icon="undo" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo" disabled></button>
+      <button class="icon-btn" id="btnRedo" data-icon="redo" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo" disabled></button>
+      <button class="icon-btn" id="btnSearchTop" data-icon="search" data-needs-doc title="Find text (Ctrl/Cmd+F)" aria-label="Find text"></button>
+      <button class="icon-btn" id="btnPrintTop" data-icon="print" data-needs-doc title="Print (Ctrl/Cmd+P)" aria-label="Print"></button>
+      <button class="btn primary" id="btnSave" data-icon="download" data-needs-doc title="Download edited PDF (Ctrl/Cmd+S)">Download</button>
+    </div>
+  </header>
+
+  <!-- Mode tabs + ribbon -->
+  <nav class="modes" role="tablist" aria-label="Modes">
+    <button role="tab" class="mode" data-mode="view" aria-selected="true">View</button>
+    <button role="tab" class="mode" data-mode="comment" aria-selected="false">Comment</button>
+    <button role="tab" class="mode" data-mode="edit" aria-selected="false">Edit</button>
+    <button role="tab" class="mode" data-mode="fill" aria-selected="false">Fill &amp; Sign</button>
+    <button role="tab" class="mode" data-mode="organize" aria-selected="false">Organize pages</button>
+  </nav>
+
+  <div class="ribbon" id="ribbon">
+    <div class="ribbon-tools" data-for="view">
+      <button class="icon-btn tool" data-tool="select" data-icon="select" data-needs-doc title="Select text and items (V)" aria-label="Select" data-label="Select"></button>
+      <button class="icon-btn tool" data-tool="hand" data-icon="hand" data-needs-doc title="Hand: drag to scroll (Space)" aria-label="Hand" data-label="Hand"></button>
+      <span class="ribbon-sep"></span>
+      <button class="icon-btn" data-action="fitWidth" data-icon="fitw" data-needs-doc aria-label="Fit width" data-label="Fit width"></button>
+      <button class="icon-btn" data-action="fitPage" data-icon="fitp" data-needs-doc aria-label="Fit page" data-label="Fit page"></button>
+      <button class="icon-btn" data-action="rotateCurrentLeft" data-icon="rotl" data-needs-doc title="Rotate current page left" aria-label="Rotate page left" data-label="Rotate left"></button>
+      <button class="icon-btn" data-action="rotateCurrentRight" data-icon="rotr" data-needs-doc title="Rotate current page right" aria-label="Rotate page right" data-label="Rotate right"></button>
+      <button class="icon-btn tool" data-tool="detect" data-icon="detect" data-needs-doc title="Detect font: drag over text in the PDF to identify its font (F)" aria-label="Detect font" data-label="Detect font"></button>
+    </div>
+    <div class="ribbon-tools" data-for="comment" hidden>
+      <button class="icon-btn tool" data-tool="select" data-icon="select" data-needs-doc title="Select (V)" aria-label="Select" data-label="Select"></button>
+      <button class="icon-btn tool" data-tool="note" data-icon="note" data-needs-doc title="Sticky note (N)" aria-label="Sticky note" data-label="Note"></button>
+      <button class="icon-btn tool" data-tool="hltext" data-icon="hltext" data-needs-doc title="Highlight text: select text to highlight it (H)" aria-label="Highlight text" data-label="Highlight"></button>
+      <button class="icon-btn tool" data-tool="underline" data-icon="underline" data-needs-doc title="Underline text (U)" aria-label="Underline text" data-label="Underline"></button>
+      <button class="icon-btn tool" data-tool="strike" data-icon="strike" data-needs-doc title="Strikethrough text (K)" aria-label="Strikethrough text" data-label="Strike"></button>
+      <button class="icon-btn tool" data-tool="highlight" data-icon="highlight" data-needs-doc title="Highlight an area" aria-label="Highlight area" data-label="Area"></button>
+      <span class="ribbon-sep"></span>
+      <button class="icon-btn tool" data-tool="draw" data-icon="draw" data-needs-doc title="Freehand draw (D)" aria-label="Draw" data-label="Draw"></button>
+      <button class="icon-btn tool" data-tool="rect" data-icon="rect" data-needs-doc title="Rectangle (R)" aria-label="Rectangle" data-label="Rectangle"></button>
+      <button class="icon-btn tool" data-tool="ellipse" data-icon="ellipse" data-needs-doc title="Ellipse (E)" aria-label="Ellipse" data-label="Ellipse"></button>
+      <button class="icon-btn tool" data-tool="line" data-icon="line" data-needs-doc title="Line, Shift snaps to 45° (L)" aria-label="Line" data-label="Line"></button>
+      <button class="icon-btn tool" data-tool="arrow" data-icon="arrow" data-needs-doc title="Arrow (A)" aria-label="Arrow" data-label="Arrow"></button>
+      <button class="icon-btn tool" data-tool="text" data-icon="text" data-needs-doc title="Text box (T)" aria-label="Text box" data-label="Text"></button>
+    </div>
+    <div class="ribbon-tools" data-for="edit" hidden>
+      <button class="icon-btn tool" data-tool="select" data-icon="select" data-needs-doc title="Select (V)" aria-label="Select" data-label="Select"></button>
+      <button class="icon-btn tool" data-tool="text" data-icon="text" data-needs-doc title="Add text (T)" aria-label="Add text" data-label="Add text"></button>
+      <button class="icon-btn tool" data-tool="whiteout" data-icon="whiteout" data-needs-doc title="White-out: cover existing content (W)" aria-label="White-out" data-label="White-out"></button>
+      <button class="icon-btn" id="btnImage" data-icon="image" data-needs-doc title="Insert image" aria-label="Insert image" data-label="Image"></button>
+      <button class="icon-btn tool" data-tool="detect" data-icon="detect" data-needs-doc title="Detect font: drag over text in the PDF to identify its font (F)" aria-label="Detect font" data-label="Detect font"></button>
+      <span class="ribbon-sep"></span>
+      <button class="icon-btn tool" data-tool="rect" data-icon="rect" data-needs-doc title="Rectangle (R)" aria-label="Rectangle" data-label="Rectangle"></button>
+      <button class="icon-btn tool" data-tool="line" data-icon="line" data-needs-doc title="Line (L)" aria-label="Line" data-label="Line"></button>
+    </div>
+    <div class="ribbon-tools" data-for="fill" hidden>
+      <button class="icon-btn tool" data-tool="select" data-icon="select" data-needs-doc title="Select (V)" aria-label="Select" data-label="Select"></button>
+      <button class="icon-btn tool" data-tool="text" data-icon="text" data-needs-doc title="Type text anywhere (T)" aria-label="Type text" data-label="Type"></button>
+      <button class="icon-btn tool" data-tool="check" data-icon="check" data-needs-doc title="Check mark" aria-label="Check mark" data-label="Check"></button>
+      <button class="icon-btn tool" data-tool="cross" data-icon="cross" data-needs-doc title="Cross mark" aria-label="Cross mark" data-label="Cross"></button>
+      <button class="icon-btn tool" data-tool="dot" data-icon="dot" data-needs-doc title="Dot" aria-label="Dot" data-label="Dot"></button>
+      <button class="icon-btn tool" data-tool="date" data-icon="calendar" data-needs-doc title="Insert today's date" aria-label="Date" data-label="Date"></button>
+      <span class="ribbon-sep"></span>
+      <button class="icon-btn" id="btnSign" data-icon="sign" data-needs-doc title="Add signature" aria-label="Add signature" data-label="Sign"></button>
+      <button class="icon-btn" id="btnInitials" data-icon="initials" data-needs-doc title="Add initials" aria-label="Add initials" data-label="Initials"></button>
+      <button class="icon-btn" data-action="showForms" data-icon="form" data-needs-doc title="Show form fields" aria-label="Form fields" data-label="Form fields"></button>
+    </div>
+    <div class="ribbon-tools" data-for="organize" hidden>
+      <button class="icon-btn" data-action="selectAllPages" data-icon="selectall" data-needs-doc aria-label="Select all pages" data-label="Select all"></button>
+      <button class="icon-btn" data-action="rotateSelLeft" data-icon="rotl" data-needs-doc aria-label="Rotate left" data-label="Rotate left"></button>
+      <button class="icon-btn" data-action="rotateSelRight" data-icon="rotr" data-needs-doc aria-label="Rotate right" data-label="Rotate right"></button>
+      <button class="icon-btn danger" data-action="deleteSel" data-icon="trash" data-needs-doc aria-label="Delete pages" data-label="Delete"></button>
+      <span class="ribbon-sep"></span>
+      <button class="icon-btn" id="btnBlank" data-icon="blank" data-needs-doc title="Insert a blank page after the current page" aria-label="Insert blank page" data-label="Blank page"></button>
+      <button class="icon-btn" data-action="addPdf" data-icon="add" data-needs-doc title="Insert pages from other PDFs" aria-label="Insert from file" data-label="Insert file"></button>
+      <button class="icon-btn" data-action="extractSel" data-icon="extract" data-needs-doc title="Download selected pages as a new PDF" aria-label="Extract pages" data-label="Extract"></button>
+      <button class="icon-btn" data-action="splitDoc" data-icon="split" data-needs-doc title="Split into several PDFs" aria-label="Split" data-label="Split"></button>
+    </div>
+
+    <div class="props" id="props">
+      <span class="props-title" id="propsTitle">Options</span>
+      <label class="prop" data-prop="font"><select id="propFont" aria-label="Font"></select></label>
+      <div class="prop seg" data-prop="bold" role="group" aria-label="Font style">
+        <button type="button" class="seg-btn" id="propBold" aria-pressed="false" title="Bold (Ctrl/Cmd+B)" aria-label="Bold"><b>B</b></button>
+        <button type="button" class="seg-btn" id="propItalic" aria-pressed="false" title="Italic (Ctrl/Cmd+I)" aria-label="Italic"><i>I</i></button>
+      </div>
+      <label class="prop" data-prop="size" title="Size"><span id="sizeLabel">Size</span><input type="text" inputmode="decimal" autocomplete="off" id="propSize" min="0.5" max="96" step="0.5" list="sizeList"></label>
+      <datalist id="sizeList"><option value="8"><option value="9"><option value="10"><option value="11"><option value="12"><option value="14"><option value="16"><option value="18"><option value="20"><option value="24"><option value="28"><option value="32"><option value="36"><option value="48"><option value="64"><option value="72"></datalist>
+      <datalist id="strokeList"><option value="0.5"><option value="1"><option value="1.5"><option value="2"><option value="3"><option value="4"><option value="6"><option value="8"><option value="12"></datalist>
+      <label class="prop" data-prop="color" title="Color"><input type="color" id="propColor" aria-label="Color"></label>
+      <label class="prop" data-prop="opacity" title="Opacity"><span>Opacity</span><input type="range" id="propOpacity" min="0.1" max="1" step="0.05"></label>
+      <button class="btn sm" id="btnMatchText" data-icon="align" hidden title="Copy the font, size and baseline of the nearest original text">Match original</button>
+      <button class="btn sm danger" id="btnDeleteAnnot" data-icon="trash" title="Delete selected (Delete)" hidden>Delete</button>
+      <span class="props-hint" id="propsHint" hidden></span>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <!-- Left rail + side panel -->
+    <nav class="rail" aria-label="Panels">
+      <button class="rail-btn" data-panel="pages" data-icon="pages" title="Page thumbnails" aria-label="Pages" aria-pressed="true"></button>
+      <button class="rail-btn" data-panel="outline" data-icon="bookmark" title="Bookmarks" aria-label="Bookmarks" aria-pressed="false"></button>
+      <button class="rail-btn" data-panel="search" data-icon="search" title="Find text (Ctrl/Cmd+F)" aria-label="Search" aria-pressed="false"></button>
+      <button class="rail-btn" data-panel="comments" data-icon="comment" title="Comments and markups" aria-label="Comments" aria-pressed="false"></button>
+      <button class="rail-btn" data-panel="forms" data-icon="form" title="Form fields" aria-label="Form fields" aria-pressed="false" id="btnForms"></button>
+    </nav>
+
+    <aside class="side" id="side" aria-label="Side panel">
+      <section class="panel" data-panel="pages">
+        <div class="panel-head">
+          <span id="pagesTitle">Pages</span>
+          <div class="bulk" id="bulkBar" hidden>
+            <button class="icon-btn sm" data-bulk="rotl" data-icon="rotl" title="Rotate selected left" aria-label="Rotate selected left"></button>
+            <button class="icon-btn sm" data-bulk="rotr" data-icon="rotr" title="Rotate selected right" aria-label="Rotate selected right"></button>
+            <button class="icon-btn sm" data-bulk="extract" data-icon="extract" title="Download selected pages as a new PDF" aria-label="Extract selected pages"></button>
+            <button class="icon-btn sm danger" data-bulk="del" data-icon="trash" title="Delete selected pages" aria-label="Delete selected pages"></button>
+          </div>
+        </div>
+        <div id="thumbList" class="thumb-list"></div>
+        <p class="panel-hint" id="thumbHint" hidden>Drag to reorder. Cmd/Ctrl or Shift-click to select several.</p>
+      </section>
+      <section class="panel" data-panel="outline" hidden>
+        <div class="panel-head"><span>Bookmarks</span></div>
+        <div id="outlineBody" class="panel-body"></div>
+      </section>
+      <section class="panel" data-panel="search" hidden>
+        <div class="panel-head"><span>Find</span></div>
+        <div class="panel-body">
+          <form class="search-form" id="searchForm" autocomplete="off">
+            <input type="search" id="searchInput" placeholder="Find in document" aria-label="Find in document">
+            <button type="button" class="icon-btn sm" id="searchPrev" data-icon="up" aria-label="Previous match"></button>
+            <button type="button" class="icon-btn sm" id="searchNext" data-icon="down" aria-label="Next match"></button>
+          </form>
+          <label class="check-row"><input type="checkbox" id="searchCase"> Match case</label>
+          <label class="check-row"><input type="checkbox" id="searchWhole"> Whole words</label>
+          <p class="muted small" id="searchStatus"></p>
+          <div id="searchResults" class="results"></div>
+        </div>
+      </section>
+      <section class="panel" data-panel="comments" hidden>
+        <div class="panel-head"><span id="commentsTitle">Comments</span></div>
+        <div id="commentsBody" class="panel-body"></div>
+      </section>
+      <section class="panel" data-panel="forms" hidden>
+        <div class="panel-head"><span>Form fields</span></div>
+        <div class="panel-body">
+          <p class="muted small">Values are written into the PDF when you download it.</p>
+          <div id="formBody"></div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Document -->
+    <main id="viewer" data-tool="select">
+      <div id="empty" class="empty">
+        <div class="empty-card">
+          <div class="empty-icon" data-icon="blank"></div>
+          <h1>Open a PDF to view, edit and sign it</h1>
+          <p>Everything happens in your browser. Your file is never uploaded.</p>
+          <div class="empty-actions">
+            <button class="btn primary" id="btnOpen2" data-icon="open">Open PDF</button>
+            <button class="btn" id="btnSample">Try a sample</button>
+          </div>
+          <p class="muted">or drop a PDF anywhere on this page</p>
+          <ul class="features">
+            <li>Comment &amp; highlight</li><li>Add &amp; style text</li><li>Detect fonts</li><li>Fill forms</li>
+            <li>Sign</li><li>Organize pages</li><li>Combine &amp; split</li><li>Search</li><li>Print</li>
+          </ul>
+        </div>
+      </div>
+      <div id="pages"></div>
+      <div id="organizeGrid" class="thumb-list grid" hidden></div>
+    </main>
+
+    <div class="pagebar" id="pagebar" hidden>
+      <button class="icon-btn sm" id="btnPrevPage" data-icon="up" title="Previous page" aria-label="Previous page"></button>
+      <input id="pageInput" inputmode="numeric" aria-label="Page number"><span class="muted" id="pageCount">/ 0</span>
+      <button class="icon-btn sm" id="btnNextPage" data-icon="down" title="Next page" aria-label="Next page"></button>
+      <span class="pagebar-sep"></span>
+      <button class="icon-btn sm" id="btnZoomOut" data-icon="minus" title="Zoom out (-)" aria-label="Zoom out"></button>
+      <select id="zoomSelect" aria-label="Zoom">
+        <option value="fitWidth">Fit width</option><option value="fitPage">Fit page</option>
+        <option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option>
+        <option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option>
+        <option value="3">300%</option><option value="4">400%</option>
+      </select>
+      <button class="icon-btn sm" id="btnZoomIn" data-icon="plus" title="Zoom in (+)" aria-label="Zoom in"></button>
+    </div>
+
+    <section class="font-panel" id="fontPanel" hidden aria-label="Font detector">
+      <div class="fp-head">
+        <strong>Font detector</strong>
+        <button class="icon-btn sm" id="btnCloseFontPanel" data-icon="close" aria-label="Close font detector"></button>
+      </div>
+      <div id="fontPanelBody"></div>
+    </section>
+  </div>
+
+  <div id="dropHint" class="drop-hint" hidden><span id="dropText">Drop a PDF to open it</span></div>
+  <div id="busy" class="busy" hidden><div class="spinner"></div><span id="busyMsg">Working…</span></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="sigDialog" aria-labelledby="sigTitle">
+    <form method="dialog" class="sig">
+      <div class="sig-head">
+        <strong id="sigTitle">Draw your signature</strong>
+        <div class="sig-inks">
+          <label><input type="radio" name="ink" value="#111827" checked><span class="swatch" style="background:#111827"></span></label>
+          <label><input type="radio" name="ink" value="#1d4ed8"><span class="swatch" style="background:#1d4ed8"></span></label>
+        </div>
+      </div>
+      <canvas id="sigCanvas" width="560" height="200"></canvas>
+      <div class="sig-actions">
+        <button type="button" class="btn" id="sigClear">Clear</button>
+        <span class="grow"></span>
+        <button type="submit" class="btn" value="cancel">Cancel</button>
+        <button type="button" class="btn primary" id="sigUse">Place</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="propsDialog" aria-labelledby="propsDlgTitle">
+    <form method="dialog" class="dlg">
+      <strong id="propsDlgTitle">Document properties</strong>
+      <div class="dlg-grid">
+        <label>Title<input id="metaTitle"></label>
+        <label>Author<input id="metaAuthor"></label>
+        <label>Subject<input id="metaSubject"></label>
+        <label>Keywords<input id="metaKeywords"></label>
+      </div>
+      <dl class="facts" id="docFacts"></dl>
+      <div class="sig-actions"><span class="grow"></span><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok" id="metaSave">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="splitDialog" aria-labelledby="splitTitle">
+    <form method="dialog" class="dlg">
+      <strong id="splitTitle">Split document</strong>
+      <label class="inline">Split every <input type="number" id="splitEvery" min="1" value="1" style="width:64px"> page(s)</label>
+      <p class="muted small" id="splitInfo"></p>
+      <div class="sig-actions"><span class="grow"></span><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok">Split and download</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="keysDialog" aria-labelledby="keysTitle">
+    <form method="dialog" class="dlg">
+      <strong id="keysTitle">Keyboard shortcuts</strong>
+      <dl class="facts keys">
+        <dt>V</dt><dd>Select</dd><dt>Space (hold)</dt><dd>Hand / pan</dd><dt>T</dt><dd>Text</dd>
+        <dt>N</dt><dd>Sticky note</dd><dt>H · U · K</dt><dd>Highlight · underline · strikethrough text</dd>
+        <dt>D · R · E · L · A</dt><dd>Draw · rectangle · ellipse · line · arrow</dd>
+        <dt>W</dt><dd>White-out</dd><dt>F</dt><dd>Detect font</dd>
+        <dt>Ctrl/Cmd+F</dt><dd>Find</dd><dt>Ctrl/Cmd+Z / Shift+Z</dt><dd>Undo / redo</dd>
+        <dt>Ctrl/Cmd+S · P · O</dt><dd>Download · print · open</dd>
+        <dt>Delete</dt><dd>Delete selection</dd><dt>Arrows</dt><dd>Nudge (Shift = 10pt)</dd>
+        <dt>+ / −</dt><dd>Zoom</dd><dt>PageUp / PageDown</dt><dd>Previous / next page</dd>
+      </dl>
+      <div class="sig-actions"><span class="grow"></span><button class="btn primary" value="ok">Close</button></div>
+    </form>
+  </dialog>
+
+  <input type="file" id="fileOpen" accept="application/pdf,.pdf" hidden>
+  <input type="file" id="fileAdd" accept="application/pdf,.pdf" multiple hidden>
+  <input type="file" id="fileImage" accept="image/*" hidden>
+  <input type="file" id="fileFont" accept=".ttf,.otf,font/ttf,font/otf" hidden>
+
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="vendor/fontkit.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

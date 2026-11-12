@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/wrangler@4.93.0/config-schema.json",
+  "name": "pdf-editor",
+  "compatibility_date": "2026-11-01",
+  // Static site only: everything runs in the browser, no Worker script.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
